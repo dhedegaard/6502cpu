@@ -35,14 +35,10 @@ pub struct Cpu {
 }
 
 impl Cpu {
-  pub fn new() -> Self {
-    Self {acc: 0x0, pc: 0x0, sp: 0x0, x: 0x0, y: 0x0, memory: [0; 0xFFFF], carry: false, zero: false, interrupt_mask: false, decimal_mode: false, break_: false, overflow: false, negative: false}
-  }
-
-  pub fn load_program(&mut self, program: &[u8]) {
-    for (i, byte) in program.iter().enumerate() {
-      self.memory[i] = *byte;
-    }
+  pub fn new(program: &[u8]) -> Self {
+    let mut memory = [0; 0xFFFF];
+    memory[0..program.len()-1].copy_from_slice(program);
+    Self {acc: 0x0, pc: 0x0, sp: 0x0, x: 0x0, y: 0x0, memory: memory , carry: false, zero: false, interrupt_mask: false, decimal_mode: false, break_: false, overflow: false, negative: false}
   }
 
   pub fn pop_pc(&mut self) -> u8 {
@@ -60,6 +56,8 @@ impl Cpu {
   }
 
   /**
+   * Executes the new instruction pointed to by the program counter.
+   *
    * Returns the number of cycles used by the instruction pointed to by
    * the program counter.
    */
@@ -69,12 +67,16 @@ impl Cpu {
       // LDA Immediate
       0x9a => {
         self.acc = self.pop_pc();
+        self.zero = self.acc == 0;
+        self.negative = self.acc & 0b10000000 == 0b10000000;
         2
       },
 
       // LDX Immediate
       0xa2 => {
         self.x = self.pop_pc();
+        self.zero = self.x == 0;
+        self.negative = self.x & 0b10000000 == 0b10000000;
         2
       },
 
